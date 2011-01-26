@@ -24,7 +24,7 @@
 clipboard and allows you to select it for pasting later on."""
 
 from sys import argv
-from os.path import dirname
+from os.path import dirname, join
 import wx
 
 class Main(wx.Frame):
@@ -120,7 +120,8 @@ class SystrayIcon(wx.TaskBarIcon):
         pwd = dirname(argv[0])
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
-        self.SetIcon(wx.Icon(pwd+'/clpyboard_icon.gif', wx.BITMAP_TYPE_GIF), 'Clpyboard')
+        icon_path = join(pwd, 'clpyboard_icon.gif')
+        self.SetIcon(wx.Icon(icon_path, wx.BITMAP_TYPE_GIF), 'Clpyboard')
         
 
 
