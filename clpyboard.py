@@ -23,6 +23,8 @@
 """Clpyboard is a simple application that stores data you copy to the
 clipboard and allows you to select it for pasting later on."""
 
+from sys import argv
+from os.path import dirname
 import wx
 
 class Main(wx.Frame):
@@ -115,9 +117,10 @@ class Main(wx.Frame):
 
 class SystrayIcon(wx.TaskBarIcon):
     def __init__(self, frame):
+        pwd = dirname(argv[0])
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
-        self.SetIcon(wx.Icon('clpyboard_icon.gif', wx.BITMAP_TYPE_GIF), 'Clpyboard')
+        self.SetIcon(wx.Icon(pwd+'/clpyboard_icon.gif', wx.BITMAP_TYPE_GIF), 'Clpyboard')
         
 
 
