@@ -24,11 +24,15 @@
 clipboard and allows you to select it for pasting later on."""
 
 from sys import argv
-from os.path import dirname, join
+from os.path import dirname, join, isfile
+from pickle import dump, load
 import wx
 
 class Main(wx.Frame):
     """The main class for clpyboard."""
+    
+    pwd = dirname(argv[0])
+    save_file = join(pwd, 'saved')
     
     def showMenu(self, event):
         """Show the main menu."""
@@ -41,7 +45,7 @@ class Main(wx.Frame):
         self.menu.Append(-1, "Clear")
         self.icon.Bind(wx.EVT_MENU, self.clear, id=-1)
         self.menu.Append(-10, "Quit")
-        self.icon.Bind(wx.EVT_MENU, quit, id=-10)
+        self.icon.Bind(wx.EVT_MENU, self.quitApp, id=-10)
 
     def checkCB(self, event):
         """Checks the clipboard to see if new content has been added."""
@@ -65,7 +69,8 @@ class Main(wx.Frame):
         self.funcs[self.data_count] = self.onSelect()
         self.menu.InsertRadioItem(0, self.data_count, label)
         self.menu.Check(self.data_count, True)
-        self.icon.Bind(wx.EVT_MENU, self.funcs[self.data_count], id=self.data_count)
+        self.icon.Bind(wx.EVT_MENU, self.funcs[self.data_count],
+                        id=self.data_count)
         self.data_count += 1
         
     
@@ -104,28 +109,40 @@ class Main(wx.Frame):
         self.timer = wx.Timer(self, t)
         self.Bind(wx.EVT_TIMER, self.checkCB, self.timer)
         self.timer.Start(t)
+    
+    def saveData(self):
+        with open(self.save_file, 'wb') as f:
+            dump(self.old_data, f)
+    
+    def loadData(self):
+        with open(self.save_file, 'rb') as f:
+            for line in load(f):
+                self.store(line)
+    
+    def quitApp(self, event):
+        self.saveData()
+        quit()
         
     def __init__(self):
         wx.Frame.__init__(self, None)
-        self.icon = SystrayIcon(self)
+        self.icon = SystrayIcon(self, self.pwd)
         self.old_data = []
         self.data_count = 0
         self.funcs = {}
         self.createMenu()
         self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.onClick)
+        if isfile(self.save_file):
+            self.loadData()
         self.startDaemon()
 
 class SystrayIcon(wx.TaskBarIcon):
-    def __init__(self, frame):
-        pwd = dirname(argv[0])
+    def __init__(self, frame, pwd):
         wx.TaskBarIcon.__init__(self)
         self.frame = frame
         icon_path = join(pwd, 'clpyboard_icon.gif')
-        self.SetIcon(wx.Icon(icon_path, wx.BITMAP_TYPE_GIF), 'Clpyboard')
+        self.SetIcon(wx.Icon(icon_path, wx.BITMAP_TYPE_GIF),'Clpyboard')
         
-
-
-
-app = wx.App(False)
-window = Main()
-app.MainLoop()
+if __name__ == '__main__':
+    app = wx.App(False)
+    window = Main()
+    app.MainLoop()
