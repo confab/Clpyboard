@@ -76,7 +76,7 @@ class Main(wx.Frame):
         label = data
         label = label.replace('\n', ' ')
         if len(label) > 20:
-            label = label[:17]+'...'
+            label = '{label}...'.format(label=label[:17])
         self.old_data.append(data)
         self.funcs[self.data_count] = self.on_select()
         self.menu.InsertRadioItem(0, self.data_count, label)
