@@ -34,6 +34,18 @@ class Main(wx.Frame):
     pwd = dirname(argv[0])
     save_file = join(pwd, 'saved')
     
+    def __init__(self):
+        wx.Frame.__init__(self, None)
+        self.icon = SystrayIcon(self, self.pwd)
+        self.old_data = []
+        self.data_count = 0
+        self.funcs = {}
+        self.create_menu()
+        self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.on_click)
+        if isfile(self.save_file):
+            self.load_data()
+        self.start_daemon()
+    
     def show_menu(self, event):
         """Show the main menu."""
         self.PopupMenu(self.menu)
@@ -68,8 +80,7 @@ class Main(wx.Frame):
         self.old_data.append(data)
         self.funcs[self.data_count] = self.on_select()
         self.menu.InsertRadioItem(0, self.data_count, label)
-        self.menu.Check(self.data_count, True)  # Commenting this out makes the
-                                                # program work on Windows
+        self.menu.Check(self.data_count, True)
         self.icon.Bind(wx.EVT_MENU, self.funcs[self.data_count],
                         id=self.data_count)
         self.data_count += 1
@@ -124,18 +135,7 @@ class Main(wx.Frame):
     def quit_app(self, event):
         self.save_data()
         quit()
-        
-    def __init__(self):
-        wx.Frame.__init__(self, None)
-        self.icon = SystrayIcon(self, self.pwd)
-        self.old_data = []
-        self.data_count = 0
-        self.funcs = {}
-        self.create_menu()
-        self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.on_click)
-        if isfile(self.save_file):
-            self.load_data()
-        self.start_daemon()
+
 
 class SystrayIcon(wx.TaskBarIcon):
     def __init__(self, frame, pwd):
