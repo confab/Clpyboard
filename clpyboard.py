@@ -34,20 +34,20 @@ class Main(wx.Frame):
     pwd = dirname(argv[0])
     save_file = join(pwd, 'saved')
     
-    def showMenu(self, event):
+    def show_menu(self, event):
         """Show the main menu."""
         self.PopupMenu(self.menu)
     
-    def createMenu(self):
+    def create_menu(self):
         """Create the main menu and append options."""
         self.menu = wx.Menu()
         self.menu.AppendSeparator()
-        self.menu.Append(-1, "Clear")
-        self.icon.Bind(wx.EVT_MENU, self.clear, id=-1)
+        self.menu.Append(-5, "Clear")
+        self.icon.Bind(wx.EVT_MENU, self.clear, id=-5)
         self.menu.Append(-10, "Quit")
-        self.icon.Bind(wx.EVT_MENU, self.quitApp, id=-10)
+        self.icon.Bind(wx.EVT_MENU, self.quit_app, id=-10)
 
-    def checkCB(self, event):
+    def check_cb(self, event):
         """Checks the clipboard to see if new content has been added."""
         if wx.TheClipboard.Open():
             data = wx.TextDataObject()
@@ -61,29 +61,30 @@ class Main(wx.Frame):
     def store(self, data):
         """Called if new data is detected. Stores the data in memory and
         adds a corresponding option to the menu."""
-        if len(data) > 20:
-            label = data[:17]+'...'
-        else:
-            label = data
+        label = data
+        label = label.replace('\n', ' ')
+        if len(label) > 20:
+            label = label[:17]+'...'
         self.old_data.append(data)
-        self.funcs[self.data_count] = self.onSelect()
+        self.funcs[self.data_count] = self.on_select()
         self.menu.InsertRadioItem(0, self.data_count, label)
-        self.menu.Check(self.data_count, True)
+        self.menu.Check(self.data_count, True)  # Commenting this out makes the
+                                                # program work on Windows
         self.icon.Bind(wx.EVT_MENU, self.funcs[self.data_count],
                         id=self.data_count)
         self.data_count += 1
         
     
-    def onSelect(self):
+    def on_select(self):
         """Generates and returns a function that will be executed when
         the relevant option is selected in the menu."""
         dc = self.data_count
-        def toCB_relevant(event):
-            self.toCB(self.old_data[dc])
+        def to_cb_relevant(event):
+            self.to_cb(self.old_data[dc])
             self.menu.Check(dc, True)
-        return toCB_relevant
+        return to_cb_relevant
     
-    def toCB(self, data):
+    def to_cb(self, data):
         """Replaces the current clipboard contents with the
         selected data."""
         if wx.TheClipboard.Open():
@@ -91,36 +92,37 @@ class Main(wx.Frame):
             wx.TheClipboard.SetData(wx.TextDataObject(data))
             wx.TheClipboard.Close()
     
-    def onClick(self, event):
+    def on_click(self, event):
         """Pop up the menu when the systray icon is clicked."""
         self.icon.PopupMenu(self.menu)
     
     def clear(self, event):
         """Clear all stored data from memory."""
+        print('hello')
         for i in range(self.data_count):
             self.menu.Delete(i)
         self.funcs = {}
         self.old_data = []
         self.data_count = 0
     
-    def startDaemon(self, t=1000):
+    def start_daemon(self, t=1000):
         """Start the daemon, which will check the clipboard for new
-        content every t seconds."""
+        content every t/1000 seconds."""
         self.timer = wx.Timer(self, t)
-        self.Bind(wx.EVT_TIMER, self.checkCB, self.timer)
+        self.Bind(wx.EVT_TIMER, self.check_cb, self.timer)
         self.timer.Start(t)
     
-    def saveData(self):
+    def save_data(self):
         with open(self.save_file, 'wb') as f:
             dump(self.old_data, f)
     
-    def loadData(self):
+    def load_data(self):
         with open(self.save_file, 'rb') as f:
             for line in load(f):
                 self.store(line)
     
-    def quitApp(self, event):
-        self.saveData()
+    def quit_app(self, event):
+        self.save_data()
         quit()
         
     def __init__(self):
@@ -129,11 +131,11 @@ class Main(wx.Frame):
         self.old_data = []
         self.data_count = 0
         self.funcs = {}
-        self.createMenu()
-        self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.onClick)
+        self.create_menu()
+        self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.on_click)
         if isfile(self.save_file):
-            self.loadData()
-        self.startDaemon()
+            self.load_data()
+        self.start_daemon()
 
 class SystrayIcon(wx.TaskBarIcon):
     def __init__(self, frame, pwd):
