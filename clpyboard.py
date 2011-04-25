@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 #       clpyboard.py
@@ -45,6 +45,8 @@ class Main(wx.Frame):
         if isfile(self.save_file):
             self.load_data()
         self.start_daemon()
+        # Boolean to set show new lines option in settings.
+        self.show_newlines = False
     
     def show_menu(self, event):
         """Show the main menu."""
@@ -58,6 +60,10 @@ class Main(wx.Frame):
         self.icon.Bind(wx.EVT_MENU, self.clear, id=-5)
         self.menu.Append(-10, "Quit")
         self.icon.Bind(wx.EVT_MENU, self.quit_app, id=-10)
+        # Add a settings option
+        self.menu.AppendSeparator()
+        self.menu.Append(-15, "Settings")
+        self.icon.Bind(wx.EVT_MENU, self.settings, id=-15)
 
     def check_cb(self, event):
         """Checks the clipboard to see if new content has been added."""
@@ -74,7 +80,10 @@ class Main(wx.Frame):
         """Called if new data is detected. Stores the data in memory and
         adds a corresponding option to the menu."""
         label = data
-        label = label.replace('\n', ' ')
+        # If new lines are not wanted, replace them with blank spaces.
+        if not self.show_newlines:
+            label = label.replace('\n', ' ')
+        # If the text is longer than 20 characters, show only the first 17.
         if len(label) > 20:
             label = '{label}...'.format(label=label[:17])
         self.old_data.append(data)
@@ -82,7 +91,7 @@ class Main(wx.Frame):
         self.menu.InsertRadioItem(0, self.data_count, label)
         self.menu.Check(self.data_count, True)
         self.icon.Bind(wx.EVT_MENU, self.funcs[self.data_count],
-                        id=self.data_count)
+                       id=self.data_count)
         self.data_count += 1
         
     
@@ -109,7 +118,6 @@ class Main(wx.Frame):
     
     def clear(self, event):
         """Clear all stored data from memory."""
-        print('hello')
         for i in range(self.data_count):
             self.menu.Delete(i)
         self.funcs = {}
@@ -124,6 +132,7 @@ class Main(wx.Frame):
         self.timer.Start(t)
     
     def save_data(self):
+        self.old_data = []
         with open(self.save_file, 'wb') as f:
             dump(self.old_data, f)
     
@@ -136,6 +145,46 @@ class Main(wx.Frame):
         self.save_data()
         quit()
 
+    def settings(self, event):
+        """Call the settings dialog."""
+        set_diag = Settings(self, -1, 'Settings')
+        set_diag.ShowModal()
+        set_diag.Destroy()
+
+class Settings(wx.Dialog):
+    """The menu for settings."""
+
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title)
+        self.parent = parent
+        wx.StaticBox(self, -1, 'Configuration', (5, 5), size=(200, 50))
+        self.newline = wx.CheckBox(self, -1, 'Show separate lines', (15, 30))
+        # Load whatever choice was last selected.
+        if self.parent.show_newlines:
+            self.newline.SetValue(True)
+
+        wx.Button(self, -20, 'OK', (10, 65))
+        wx.Button(self, -25, 'Cancel', (100, 65))
+        wx.Button(self, -30, 'Apply', (190, 65))
+
+        self.Bind(wx.EVT_BUTTON, self.ok_close, id=-20)
+        self.Bind(wx.EVT_BUTTON, self.cancel_close, id=-25)
+        self.Bind(wx.EVT_BUTTON, self.apply_changes, id=-30)
+
+    def ok_close(self, event):
+        """Updates all settings and closes the dialog."""
+        if self.newline.GetValue():
+            self.parent.show_newlines = True
+        self.Close()
+
+    def apply_changes(self, event):
+        """Updates all settings without closing the dialog."""
+        if self.newline.GetValue():
+            self.parent.show_newlines = True
+
+    def cancel_close(self, event):
+        """Closes the dialog without updating any new settings."""
+        self.Close()
 
 class SystrayIcon(wx.TaskBarIcon):
     def __init__(self, frame, pwd):
