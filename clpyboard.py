@@ -40,13 +40,13 @@ class Main(wx.Frame):
         self.old_data = []
         self.data_count = 0
         self.funcs = {}
+        self.show_newlines = False
         self.create_menu()
         self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.on_click)
         if isfile(self.save_file):
             self.load_data()
         self.start_daemon()
         # Boolean to set show new lines option in settings.
-        self.show_newlines = False
     
     def show_menu(self, event):
         """Show the main menu."""
@@ -132,7 +132,6 @@ class Main(wx.Frame):
         self.timer.Start(t)
     
     def save_data(self):
-        self.old_data = []
         with open(self.save_file, 'wb') as f:
             dump(self.old_data, f)
     
