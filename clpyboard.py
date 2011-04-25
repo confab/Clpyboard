@@ -175,12 +175,16 @@ class Settings(wx.Dialog):
         """Updates all settings and closes the dialog."""
         if self.newline.GetValue():
             self.parent.show_newlines = True
+        else:
+            self.parent.show_newlines = False
         self.Close()
 
     def apply_changes(self, event):
         """Updates all settings without closing the dialog."""
         if self.newline.GetValue():
             self.parent.show_newlines = True
+        else:
+            self.parent.show_newlines = False
 
     def cancel_close(self, event):
         """Closes the dialog without updating any new settings."""
