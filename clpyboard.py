@@ -53,6 +53,7 @@ class Main(wx.Frame):
         self.PopupMenu(self.menu)
     
     def create_menu(self):
+        # TODO: Change to auto Id and set options as variables.
         """Create the main menu and append options."""
         self.menu = wx.Menu()
         self.menu.AppendSeparator()
@@ -151,6 +152,7 @@ class Main(wx.Frame):
         set_diag.Destroy()
 
 class Settings(wx.Dialog):
+    # TODO: Use sizers instead of absolute positions.
     """The menu for settings."""
 
     def __init__(self, parent, id, title):
