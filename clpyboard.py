@@ -40,31 +40,30 @@ class Main(wx.Frame):
         self.old_data = []
         self.data_count = 0
         self.funcs = {}
+        # Boolean to set show new lines option in settings.
         self.show_newlines = False
         self.create_menu()
         self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.on_click)
         if isfile(self.save_file):
             self.load_data()
         self.start_daemon()
-        # Boolean to set show new lines option in settings.
     
     def show_menu(self, event):
         """Show the main menu."""
         self.PopupMenu(self.menu)
     
     def create_menu(self):
-        # TODO: Change to auto Id and set options as variables.
         """Create the main menu and append options."""
         self.menu = wx.Menu()
         self.menu.AppendSeparator()
-        self.menu.Append(-5, "Clear")
-        self.icon.Bind(wx.EVT_MENU, self.clear, id=-5)
-        self.menu.Append(-10, "Quit")
-        self.icon.Bind(wx.EVT_MENU, self.quit_app, id=-10)
+        menu_clear = self.menu.Append(wx.ID_ANY, "Clear")
+        self.icon.Bind(wx.EVT_MENU, self.clear, menu_clear)
+        menu_quit = self.menu.Append(wx.ID_ANY, "Quit")
+        self.icon.Bind(wx.EVT_MENU, self.quit_app, menu_quit)
         # Add a settings option
         self.menu.AppendSeparator()
-        self.menu.Append(-15, "Settings")
-        self.icon.Bind(wx.EVT_MENU, self.settings, id=-15)
+        menu_settings = self.menu.Append(wx.ID_ANY, "Settings")
+        self.icon.Bind(wx.EVT_MENU, self.settings, menu_settings)
 
     def check_cb(self, event):
         """Checks the clipboard to see if new content has been added."""
@@ -152,25 +151,52 @@ class Main(wx.Frame):
         set_diag.Destroy()
 
 class Settings(wx.Dialog):
-    # TODO: Use sizers instead of absolute positions.
     """The menu for settings."""
 
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title)
+        # Pass the initial frame as the parent.
         self.parent = parent
-        wx.StaticBox(self, -1, 'Configuration', (5, 5), size=(200, 50))
-        self.newline = wx.CheckBox(self, -1, 'Show separate lines', (15, 30))
+        # Static box to hold the different settings
+        self.config_box = wx.StaticBox(self, wx.ID_ANY, 'Configuration')
+        # Checkbox for toggling newlines
+        self.newline = wx.CheckBox(self, wx.ID_ANY, 'Show separate lines')
+        # Create three sizers, one for the staticbox, one for the buttons
+        # and one sizer to rule them all!  Pass the staticbox to the 
+        # staticbox sizer.
+        self.static_sizer = wx.StaticBoxSizer(self.config_box, wx.VERTICAL)
+        self.button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+
         # Load whatever choice was last selected.
         if self.parent.show_newlines:
             self.newline.SetValue(True)
 
-        wx.Button(self, -20, 'OK', (10, 65))
-        wx.Button(self, -25, 'Cancel', (100, 65))
-        wx.Button(self, -30, 'Apply', (190, 65))
+        # Three buttons: okay, cancel, and apply.
+        self.ok_button = wx.Button(self, wx.ID_ANY, 'OK')
+        self.cancel_button = wx.Button(self, wx.ID_ANY, 'Cancel')
+        self.apply_button = wx.Button(self, wx.ID_ANY, 'Apply')
 
-        self.Bind(wx.EVT_BUTTON, self.ok_close, id=-20)
-        self.Bind(wx.EVT_BUTTON, self.cancel_close, id=-25)
-        self.Bind(wx.EVT_BUTTON, self.apply_changes, id=-30)
+        # Bind each button to their respective functions.
+        self.Bind(wx.EVT_BUTTON, self.ok_close, self.ok_button)
+        self.Bind(wx.EVT_BUTTON, self.cancel_close, self.cancel_button)
+        self.Bind(wx.EVT_BUTTON, self.apply_changes, self.apply_button)
+
+        # Add the newline checkbox to the staticbox sizer.
+        self.static_sizer.Add(self.newline, 1, wx.EXPAND)
+        # Add the buttons to the button sizer.
+        self.button_sizer.Add(self.ok_button, 1, wx.EXPAND)
+        self.button_sizer.Add(self.cancel_button, 1, wx.EXPAND)
+        self.button_sizer.Add(self.apply_button, 1, wx.EXPAND)
+        # Add the button and static sizer to the main sizer.
+        self.main_sizer.Add(self.static_sizer, 1, wx.EXPAND)
+        self.main_sizer.Add(self.button_sizer, 1, wx.EXPAND)
+        # Load the main sizer on the window.
+        self.SetSizer(self.main_sizer)
+        # Auto-position each element in each sizer.
+        self.SetAutoLayout(True)
+        # Give control to the sizer to position each element.
+        self.main_sizer.Fit(self)
 
     def ok_close(self, event):
         """Updates all settings and closes the dialog."""
