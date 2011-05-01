@@ -33,8 +33,9 @@ class Main(wx.Frame):
     """The main class for clpyboard."""
     
     pwd = dirname(argv[0])
+    # It would be nice to join these two files into one.
     save_file = join(pwd, 'saved')
-    config_file = join(pwd, '.clpy.conf')
+    config_file = join(pwd, '.clpyboard.conf')
     
     def __init__(self):
         wx.Frame.__init__(self, None)
