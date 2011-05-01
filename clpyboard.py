@@ -26,6 +26,7 @@ clipboard and allows you to select it for pasting later on."""
 from sys import argv
 from os.path import dirname, join, isfile
 from pickle import dump, load
+import ConfigParser
 import wx
 
 class Main(wx.Frame):
@@ -33,6 +34,7 @@ class Main(wx.Frame):
     
     pwd = dirname(argv[0])
     save_file = join(pwd, 'saved')
+    config_file = join(pwd, '.clpy.conf')
     
     def __init__(self):
         wx.Frame.__init__(self, None)
@@ -42,6 +44,7 @@ class Main(wx.Frame):
         self.funcs = {}
         # Boolean to set show new lines option in settings.
         self.show_newlines = False
+        self.load_config(self.config_file)
         self.create_menu()
         self.icon.Bind(wx.EVT_TASKBAR_LEFT_UP, self.on_click)
         if isfile(self.save_file):
@@ -150,8 +153,53 @@ class Main(wx.Frame):
         set_diag.ShowModal()
         set_diag.Destroy()
 
+    def load_config(self, filename):
+        """Start up the configuration."""
+        self.config = Configuration(self, filename)
+
+class Configuration(object):
+    """Loads the config file, or creates it if corrupt/non-existant.
+    Saves the settings in the specified file."""
+
+    def __init__(self, parent, filename):
+        """Load the config file or create it."""
+        # Setup variables for use in this namespace.
+        self.parent = parent
+        self.config = ConfigParser.SafeConfigParser()
+        self.filename = filename
+        # [Settings]-section
+        self.settings = 'settings'
+        # newline-option
+        self.newline = 'newlines'
+        # Check for an existing file.  Create the file if non-existant.
+        # TODO: add error checking and recreation if file corrupted.
+        if self.config.read(self.filename):
+            # Retrieve the values from the config file.
+            self.newline_value = self.config.getboolean(self.settings,
+                                                        self.newline)
+            # Load the values into the settings in the main application.
+            self.parent.show_newlines = self.newline_value
+        else:
+            # Create the different sections and save the file.
+            self.config.add_section(self.settings)
+            self.save_data()
+
+    def save_data(self):
+        """Saves all values in the settings menu."""
+        # Retrieve the current values from the main application.
+        # The values must be converted to strings in order to save to file.
+        self.newline_value = str(self.parent.show_newlines)
+        # Set the values of each option.
+        self.config.set(self.settings, self.newline, self.newline_value)
+        # Save the file.
+        with open(self.filename, 'wb') as config_file:
+            self.config.write(config_file)
+
 class Settings(wx.Dialog):
     """The menu for settings."""
+    # TODO: The newline selection doesn't automatically update.
+    # Currently, the program must be reloaded for changes to take effect.
+    # Will need to modify so that changes take effect immediately.
 
     def __init__(self, parent, id, title):
         wx.Dialog.__init__(self, parent, id, title)
@@ -200,18 +248,28 @@ class Settings(wx.Dialog):
 
     def ok_close(self, event):
         """Updates all settings and closes the dialog."""
+        # Retrieve value of newline checkbox, update main application
+        # with the value.
         if self.newline.GetValue():
             self.parent.show_newlines = True
         else:
             self.parent.show_newlines = False
+        # Save the settings to the config file.
+        # This seems like too many dots...
+        self.parent.config.save_data()
         self.Close()
 
     def apply_changes(self, event):
         """Updates all settings without closing the dialog."""
+        # Retrieve value of newline checkbox, update main application
+        # with the value.
         if self.newline.GetValue():
             self.parent.show_newlines = True
         else:
             self.parent.show_newlines = False
+        # Save the settings to the config file.
+        # This seems like too many dots...
+        self.parent.config.save_data()
 
     def cancel_close(self, event):
         """Closes the dialog without updating any new settings."""
